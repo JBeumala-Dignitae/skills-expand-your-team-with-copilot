@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareTargets = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
       whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-      x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+      x: `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
     };
 
     if (platform === "copy") {
@@ -593,25 +593,21 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         platform: "facebook",
         label: "Facebook",
-        icon: "📘",
         ariaLabel: `Share ${name} on Facebook`,
       },
       {
         platform: "whatsapp",
         label: "WhatsApp",
-        icon: "💬",
         ariaLabel: `Share ${name} on WhatsApp`,
       },
       {
         platform: "x",
         label: "X",
-        icon: "X",
         ariaLabel: `Share ${name} on X`,
       },
       {
         platform: "copy",
         label: "Copy link",
-        icon: "🔗",
         ariaLabel: `Copy share link for ${name}`,
       },
     ];
@@ -694,22 +690,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareButtonsContainer = document.createElement("div");
     shareButtonsContainer.className = "share-buttons";
 
-    shareButtons.forEach(({ platform, label, icon, ariaLabel }) => {
+    shareButtons.forEach(({ platform, label, ariaLabel }) => {
       const shareButton = document.createElement("button");
       shareButton.className = "share-button";
       shareButton.type = "button";
       shareButton.dataset.platform = platform;
       shareButton.setAttribute("aria-label", ariaLabel);
 
-      const iconSpan = document.createElement("span");
-      iconSpan.className = "share-button-icon";
-      iconSpan.setAttribute("aria-hidden", "true");
-      iconSpan.textContent = icon;
-
       const labelSpan = document.createElement("span");
       labelSpan.textContent = label;
 
-      shareButton.appendChild(iconSpan);
       shareButton.appendChild(labelSpan);
       shareButton.addEventListener("click", async () => {
         await handleShare(platform, name, details, formattedSchedule);
