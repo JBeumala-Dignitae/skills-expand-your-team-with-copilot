@@ -178,7 +178,7 @@ initial_activities = {
         "participants": ["william@mergington.edu", "jacob@mergington.edu"]
     },
     "Manga Maniacs": {
-        "description": "Dive into the action, drama, and unforgettable heroes of Japanese manga—then geek out with fellow fans every week!",
+        "description": "Dive into the action, drama, and unforgettable heroes of Japanese manga - then geek out with fellow fans every week!",
         "schedule": "Tuesdays, 7:00 PM - 8:00 PM",
         "schedule_details": {
             "days": ["Tuesday"],
