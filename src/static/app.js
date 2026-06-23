@@ -590,10 +590,30 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const shareButtons = [
-      { platform: "facebook", label: "Facebook", icon: "📘" },
-      { platform: "whatsapp", label: "WhatsApp", icon: "💬" },
-      { platform: "x", label: "X", icon: "✖️" },
-      { platform: "copy", label: "Copy link", icon: "🔗" },
+      {
+        platform: "facebook",
+        label: "Facebook",
+        icon: "📘",
+        ariaLabel: `Share ${name} on Facebook`,
+      },
+      {
+        platform: "whatsapp",
+        label: "WhatsApp",
+        icon: "💬",
+        ariaLabel: `Share ${name} on WhatsApp`,
+      },
+      {
+        platform: "x",
+        label: "X",
+        icon: "X",
+        ariaLabel: `Share ${name} on X`,
+      },
+      {
+        platform: "copy",
+        label: "Copy link",
+        icon: "🔗",
+        ariaLabel: `Copy share link for ${name}`,
+      },
     ];
 
     activityCard.innerHTML = `
@@ -674,12 +694,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareButtonsContainer = document.createElement("div");
     shareButtonsContainer.className = "share-buttons";
 
-    shareButtons.forEach(({ platform, label, icon }) => {
+    shareButtons.forEach(({ platform, label, icon, ariaLabel }) => {
       const shareButton = document.createElement("button");
       shareButton.className = "share-button";
       shareButton.type = "button";
       shareButton.dataset.platform = platform;
-      shareButton.setAttribute("aria-label", `Share ${name} on ${label}`);
+      shareButton.setAttribute("aria-label", ariaLabel);
 
       const iconSpan = document.createElement("span");
       iconSpan.className = "share-button-icon";
