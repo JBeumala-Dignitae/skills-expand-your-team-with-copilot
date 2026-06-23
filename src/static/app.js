@@ -181,6 +181,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function initializeTheme() {
     const savedTheme = localStorage.getItem("themePreference");
+    if (!savedTheme) {
+      applyTheme("light");
+      return;
+    }
+
     if (savedTheme !== "light" && savedTheme !== "dark") {
       localStorage.removeItem("themePreference");
       applyTheme("light");
