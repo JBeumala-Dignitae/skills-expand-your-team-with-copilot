@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize filters from active elements
   function initializeFilters() {
-    // Initialize day filter
+    // Initialize difficulty filter
     const activeDifficultyFilter = document.querySelector(
       ".difficulty-filter.active"
     );
@@ -435,7 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Apply difficulty filter
+      // Apply difficulty filter - "All Levels" means no specific difficulty
       if (currentDifficulty === "all-levels") {
         if (details.difficulty) {
           return;
