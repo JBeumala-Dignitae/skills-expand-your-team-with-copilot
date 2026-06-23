@@ -117,6 +117,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}.`;
   }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   async function handleShare(platform, name, details, formattedSchedule) {
     const shareUrl = buildActivityShareUrl(name);
     const shareText = buildActivityShareText(name, details, formattedSchedule);
@@ -590,10 +599,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const shareButtons = [
       { platform: "facebook", label: "Facebook", icon: "f" },
-      { platform: "whatsapp", label: "WhatsApp", icon: "✆" },
+      { platform: "whatsapp", label: "WhatsApp", icon: "💬" },
       { platform: "x", label: "X", icon: "𝕏" },
       { platform: "copy", label: "Copy link", icon: "🔗" },
     ];
+    const escapedShareActivityName = escapeHtml(name);
 
     const shareButtonsHtml = `
       <div class="activity-share">
@@ -602,7 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${shareButtons
             .map(
               ({ platform, label, icon }) => `
-                <button class="share-button" type="button" data-platform="${platform}" aria-label="Share this activity on ${label}">
+                <button class="share-button" type="button" data-platform="${platform}" aria-label="Share ${escapedShareActivityName} on ${label}">
                   <span class="share-button-icon" aria-hidden="true">${icon}</span>
                   <span>${label}</span>
                 </button>
