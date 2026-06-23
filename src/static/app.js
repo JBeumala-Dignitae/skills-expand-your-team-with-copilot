@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Authentication state
   let currentUser = null;
+  let hasFocusedSharedActivity = false;
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -96,6 +97,71 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     fetchActivities();
+  }
+
+  function slugifyActivityName(name) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function buildActivityShareUrl(name) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = `activity-${slugifyActivityName(name)}`;
+    return shareUrl.toString();
+  }
+
+  function buildActivityShareText(name, details, formattedSchedule) {
+    return `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}.`;
+  }
+
+  async function handleShare(platform, name, details, formattedSchedule) {
+    const shareUrl = buildActivityShareUrl(name);
+    const shareText = buildActivityShareText(name, details, formattedSchedule);
+    const shareTargets = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+    };
+
+    if (platform === "copy") {
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        showMessage("Share link copied to clipboard.", "success");
+      } catch (error) {
+        showMessage("Unable to copy the share link.", "error");
+        console.error("Error copying share link:", error);
+      }
+      return;
+    }
+
+    const targetUrl = shareTargets[platform];
+    if (targetUrl) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function focusSharedActivityFromHash() {
+    if (hasFocusedSharedActivity || !window.location.hash) {
+      return;
+    }
+
+    const sharedActivity = document.getElementById(
+      window.location.hash.slice(1)
+    );
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    hasFocusedSharedActivity = true;
+    sharedActivity.scrollIntoView({ behavior: "smooth", block: "center" });
+    sharedActivity.classList.add("activity-card-highlight");
+    setTimeout(() => {
+      sharedActivity.classList.remove("activity-card-highlight");
+    }, 2500);
   }
 
   // Check if user is already logged in (from localStorage)
@@ -470,12 +536,15 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(filteredActivities).forEach(([name, details]) => {
       renderActivityCard(name, details);
     });
+
+    focusSharedActivityFromHash();
   }
 
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.id = `activity-${slugifyActivityName(name)}`;
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -515,6 +584,31 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="capacity-text">
           <span>${takenSpots} enrolled</span>
           <span>${spotsLeft} spots left</span>
+        </div>
+      </div>
+    `;
+
+    const shareButtons = [
+      { platform: "facebook", label: "Facebook", icon: "f" },
+      { platform: "whatsapp", label: "WhatsApp", icon: "✆" },
+      { platform: "x", label: "X", icon: "𝕏" },
+      { platform: "copy", label: "Copy link", icon: "🔗" },
+    ];
+
+    const shareButtonsHtml = `
+      <div class="activity-share">
+        <span class="share-label">Share with friends:</span>
+        <div class="share-buttons">
+          ${shareButtons
+            .map(
+              ({ platform, label, icon }) => `
+                <button class="share-button" data-platform="${platform}" aria-label="Share ${name} on ${label}">
+                  <span class="share-button-icon" aria-hidden="true">${icon}</span>
+                  <span>${label}</span>
+                </button>
+              `
+            )
+            .join("")}
         </div>
       </div>
     `;
@@ -569,6 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      ${shareButtonsHtml}
     `;
 
     // Add click handlers for delete buttons
@@ -586,6 +681,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    activityCard.querySelectorAll(".share-button").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await handleShare(
+          button.dataset.platform,
+          name,
+          details,
+          formattedSchedule
+        );
+      });
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -860,6 +966,11 @@ document.addEventListener("DOMContentLoaded", () => {
     setDayFilter,
     setTimeRangeFilter,
   };
+
+  window.addEventListener("hashchange", () => {
+    hasFocusedSharedActivity = false;
+    focusSharedActivityFromHash();
+  });
 
   // Initialize app
   checkAuthentication();
