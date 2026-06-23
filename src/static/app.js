@@ -598,9 +598,9 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const shareButtons = [
-      { platform: "facebook", label: "Facebook", icon: "f" },
+      { platform: "facebook", label: "Facebook", icon: "📘" },
       { platform: "whatsapp", label: "WhatsApp", icon: "💬" },
-      { platform: "x", label: "X", icon: "𝕏" },
+      { platform: "x", label: "X", icon: "X" },
       { platform: "copy", label: "Copy link", icon: "🔗" },
     ];
     const escapedShareActivityName = escapeHtml(name);
