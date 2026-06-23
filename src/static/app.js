@@ -602,7 +602,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${shareButtons
             .map(
               ({ platform, label, icon }) => `
-                <button class="share-button" data-platform="${platform}" aria-label="Share ${name} on ${label}">
+                <button class="share-button" type="button" data-platform="${platform}" aria-label="Share this activity on ${label}">
                   <span class="share-button-icon" aria-hidden="true">${icon}</span>
                   <span>${label}</span>
                 </button>
