@@ -20,6 +20,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const userInfo = document.getElementById("user-info");
   const displayName = document.getElementById("display-name");
   const logoutButton = document.getElementById("logout-button");
+  const themeToggleButton = document.getElementById("theme-toggle-button");
+  const themeToggleLabel = document.getElementById("theme-toggle-label");
+  const themeIcon = themeToggleButton.querySelector(".theme-icon");
   const loginModal = document.getElementById("login-modal");
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
@@ -43,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Authentication state
   let currentUser = null;
+  let currentTheme = "light";
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -166,6 +170,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function applyTheme(theme) {
+    currentTheme = theme === "dark" ? "dark" : "light";
+    const isDarkTheme = currentTheme === "dark";
+    document.body.classList.toggle("dark-mode", isDarkTheme);
+    themeIcon.textContent = isDarkTheme ? "☀️" : "🌙";
+    themeToggleLabel.textContent = isDarkTheme ? "Light Mode" : "Dark Mode";
+    localStorage.setItem("themePreference", currentTheme);
+  }
+
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem("themePreference");
+    applyTheme(savedTheme);
+  }
+
   // Login function
   async function login(username, password) {
     try {
@@ -237,6 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event listeners for authentication
   loginButton.addEventListener("click", openLoginModal);
   logoutButton.addEventListener("click", logout);
+  themeToggleButton.addEventListener("click", () => {
+    applyTheme(currentTheme === "dark" ? "light" : "dark");
+  });
   closeLoginModal.addEventListener("click", closeLoginModalHandler);
 
   // Close login modal when clicking outside
@@ -862,6 +883,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  initializeTheme();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
