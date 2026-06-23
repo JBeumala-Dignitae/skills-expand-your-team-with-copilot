@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Authentication state
   let currentUser = null;
   let hasFocusedSharedActivity = false;
+  const ACTIVITY_HIGHLIGHT_DURATION_MS = 2500;
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -117,15 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}.`;
   }
 
-  function escapeHtml(value) {
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
   async function handleShare(platform, name, details, formattedSchedule) {
     const shareUrl = buildActivityShareUrl(name);
     const shareText = buildActivityShareText(name, details, formattedSchedule);
@@ -170,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sharedActivity.classList.add("activity-card-highlight");
     setTimeout(() => {
       sharedActivity.classList.remove("activity-card-highlight");
-    }, 2500);
+    }, ACTIVITY_HIGHLIGHT_DURATION_MS);
   }
 
   // Check if user is already logged in (from localStorage)
@@ -600,28 +592,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareButtons = [
       { platform: "facebook", label: "Facebook", icon: "📘" },
       { platform: "whatsapp", label: "WhatsApp", icon: "💬" },
-      { platform: "x", label: "X", icon: "X" },
+      { platform: "x", label: "X", icon: "✖️" },
       { platform: "copy", label: "Copy link", icon: "🔗" },
     ];
-    const escapedShareActivityName = escapeHtml(name);
-
-    const shareButtonsHtml = `
-      <div class="activity-share">
-        <span class="share-label">Share with friends:</span>
-        <div class="share-buttons">
-          ${shareButtons
-            .map(
-              ({ platform, label, icon }) => `
-                <button class="share-button" type="button" data-platform="${platform}" aria-label="Share ${escapedShareActivityName} on ${label}">
-                  <span class="share-button-icon" aria-hidden="true">${icon}</span>
-                  <span>${label}</span>
-                </button>
-              `
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
 
     activityCard.innerHTML = `
       ${tagHtml}
@@ -673,7 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
-      ${shareButtonsHtml}
     `;
 
     // Add click handlers for delete buttons
@@ -692,16 +664,42 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    activityCard.querySelectorAll(".share-button").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await handleShare(
-          button.dataset.platform,
-          name,
-          details,
-          formattedSchedule
-        );
+    const shareSection = document.createElement("div");
+    shareSection.className = "activity-share";
+
+    const shareLabel = document.createElement("span");
+    shareLabel.className = "share-label";
+    shareLabel.textContent = "Share with friends:";
+
+    const shareButtonsContainer = document.createElement("div");
+    shareButtonsContainer.className = "share-buttons";
+
+    shareButtons.forEach(({ platform, label, icon }) => {
+      const shareButton = document.createElement("button");
+      shareButton.className = "share-button";
+      shareButton.type = "button";
+      shareButton.dataset.platform = platform;
+      shareButton.setAttribute("aria-label", `Share ${name} on ${label}`);
+
+      const iconSpan = document.createElement("span");
+      iconSpan.className = "share-button-icon";
+      iconSpan.setAttribute("aria-hidden", "true");
+      iconSpan.textContent = icon;
+
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = label;
+
+      shareButton.appendChild(iconSpan);
+      shareButton.appendChild(labelSpan);
+      shareButton.addEventListener("click", async () => {
+        await handleShare(platform, name, details, formattedSchedule);
       });
+      shareButtonsContainer.appendChild(shareButton);
     });
+
+    shareSection.appendChild(shareLabel);
+    shareSection.appendChild(shareButtonsContainer);
+    activityCard.appendChild(shareSection);
 
     activitiesList.appendChild(activityCard);
   }
