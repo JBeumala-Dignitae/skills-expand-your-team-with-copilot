@@ -28,10 +28,10 @@ def init_database():
                 "$set": {
                     "description": details["description"],
                     "schedule": details["schedule"],
-                    "schedule_details": details["schedule_details"],
-                    "max_participants": details["max_participants"]
+                    "schedule_details": details["schedule_details"]
                 },
                 "$setOnInsert": {
+                    "max_participants": details["max_participants"],
                     "participants": details["participants"]
                 }
             },
