@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("activity-search");
   const searchButton = document.getElementById("search-button");
   const categoryFilters = document.querySelectorAll(".category-filter");
+  const difficultyFilters = document.querySelectorAll(".difficulty-filter");
   const dayFilters = document.querySelectorAll(".day-filter");
   const timeFilters = document.querySelectorAll(".time-filter");
 
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State for activities and filters
   let allActivities = {};
   let currentFilter = "all";
+  let currentDifficulty = "all-levels";
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
@@ -47,6 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Authentication state
   let currentUser = null;
   let currentTheme = "light";
+  let hasFocusedSharedActivity = false;
+  const ACTIVITY_HIGHLIGHT_DURATION_MS = 2500;
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -57,6 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize filters from active elements
   function initializeFilters() {
+    // Initialize difficulty filter
+    const activeDifficultyFilter = document.querySelector(
+      ".difficulty-filter.active"
+    );
+    if (activeDifficultyFilter) {
+      currentDifficulty = activeDifficultyFilter.dataset.difficulty;
+    }
+
     // Initialize day filter
     const activeDayFilter = document.querySelector(".day-filter.active");
     if (activeDayFilter) {
@@ -100,6 +112,71 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     fetchActivities();
+  }
+
+  function slugifyActivityName(name) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function buildActivityShareUrl(name) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = `activity-${slugifyActivityName(name)}`;
+    return shareUrl.toString();
+  }
+
+  function buildActivityShareText(name, details, formattedSchedule) {
+    return `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}.`;
+  }
+
+  async function handleShare(platform, name, details, formattedSchedule) {
+    const shareUrl = buildActivityShareUrl(name);
+    const shareText = buildActivityShareText(name, details, formattedSchedule);
+    const shareTargets = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      x: `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+    };
+
+    if (platform === "copy") {
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        showMessage("Share link copied to clipboard.", "success");
+      } catch (error) {
+        showMessage("Unable to copy the share link.", "error");
+        console.error("Error copying share link:", error);
+      }
+      return;
+    }
+
+    const targetUrl = shareTargets[platform];
+    if (targetUrl) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function focusSharedActivityFromHash() {
+    if (hasFocusedSharedActivity || !window.location.hash) {
+      return;
+    }
+
+    const sharedActivity = document.getElementById(
+      window.location.hash.slice(1)
+    );
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    hasFocusedSharedActivity = true;
+    sharedActivity.scrollIntoView({ behavior: "smooth", block: "center" });
+    sharedActivity.classList.add("activity-card-highlight");
+    setTimeout(() => {
+      sharedActivity.classList.remove("activity-card-highlight");
+    }, ACTIVITY_HIGHLIGHT_DURATION_MS);
   }
 
   // Check if user is already logged in (from localStorage)
@@ -457,6 +534,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Apply difficulty filter - "All Levels" means no specific difficulty
+      if (currentDifficulty === "all-levels") {
+        if (details.difficulty) {
+          return;
+        }
+      } else if (details.difficulty !== currentDifficulty) {
+        return;
+      }
+
       // Apply weekend filter if selected
       if (currentTimeRange === "weekend" && details.schedule_details) {
         const activityDays = details.schedule_details.days;
@@ -474,6 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
         name.toLowerCase(),
         details.description.toLowerCase(),
         formatSchedule(details).toLowerCase(),
+        (details.difficulty || "").toLowerCase(),
       ].join(" ");
 
       if (
@@ -502,12 +589,15 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(filteredActivities).forEach(([name, details]) => {
       renderActivityCard(name, details);
     });
+
+    focusSharedActivityFromHash();
   }
 
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.id = `activity-${slugifyActivityName(name)}`;
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -551,10 +641,37 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    const difficultyHtml = details.difficulty
+      ? `<p><strong>Difficulty:</strong> ${details.difficulty}</p>`
+      : "";
+    const shareButtons = [
+      {
+        platform: "facebook",
+        label: "Facebook",
+        ariaLabel: `Share ${name} on Facebook`,
+      },
+      {
+        platform: "whatsapp",
+        label: "WhatsApp",
+        ariaLabel: `Share ${name} on WhatsApp`,
+      },
+      {
+        platform: "x",
+        label: "X",
+        ariaLabel: `Share ${name} on X`,
+      },
+      {
+        platform: "copy",
+        label: "Copy link",
+        ariaLabel: `Copy share link for ${name}`,
+      },
+    ];
+
     activityCard.innerHTML = `
       ${tagHtml}
       <h4>${name}</h4>
       <p>${details.description}</p>
+      ${difficultyHtml}
       <p class="tooltip">
         <strong>Schedule:</strong> ${formattedSchedule}
         <span class="tooltip-text">Regular meetings at this time throughout the semester</span>
@@ -619,6 +736,37 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    const shareSection = document.createElement("div");
+    shareSection.className = "activity-share";
+
+    const shareLabel = document.createElement("span");
+    shareLabel.className = "share-label";
+    shareLabel.textContent = "Share with friends:";
+
+    const shareButtonsContainer = document.createElement("div");
+    shareButtonsContainer.className = "share-buttons";
+
+    shareButtons.forEach(({ platform, label, ariaLabel }) => {
+      const shareButton = document.createElement("button");
+      shareButton.className = "share-button";
+      shareButton.type = "button";
+      shareButton.dataset.platform = platform;
+      shareButton.setAttribute("aria-label", ariaLabel);
+
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = label;
+
+      shareButton.appendChild(labelSpan);
+      shareButton.addEventListener("click", async () => {
+        await handleShare(platform, name, details, formattedSchedule);
+      });
+      shareButtonsContainer.appendChild(shareButton);
+    });
+
+    shareSection.appendChild(shareLabel);
+    shareSection.appendChild(shareButtonsContainer);
+    activityCard.appendChild(shareSection);
+
     activitiesList.appendChild(activityCard);
   }
 
@@ -643,6 +791,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update current filter and display filtered activities
       currentFilter = button.dataset.category;
+      displayFilteredActivities();
+    });
+  });
+
+  difficultyFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      difficultyFilters.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      currentDifficulty = button.dataset.difficulty;
       displayFilteredActivities();
     });
   });
@@ -889,9 +1047,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Expose filter functions to window for future UI control
   window.activityFilters = {
+    setDifficultyFilter: (difficulty) => {
+      const matchingButton = Array.from(difficultyFilters).find(
+        (button) => button.dataset.difficulty === difficulty
+      );
+      if (matchingButton) {
+        matchingButton.click();
+      }
+    },
     setDayFilter,
     setTimeRangeFilter,
   };
+
+  window.addEventListener("hashchange", () => {
+    hasFocusedSharedActivity = false;
+    focusSharedActivityFromHash();
+  });
 
   // Initialize app
   initializeTheme();
